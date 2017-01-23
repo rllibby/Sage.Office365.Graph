@@ -44,6 +44,24 @@ namespace Sage.Office365.Graph
         #region Private methods
 
         /// <summary>
+        /// Special handling for Graph service exceptions, where the Error field is more informative
+        /// than the exception itself.
+        /// </summary>
+        /// <param name="exception">The exception to process.</param>
+        private void ThrowException(Exception exception)
+        {
+            if (exception == null) return;
+            if ((exception.InnerException != null) && (exception.InnerException is ServiceException))
+            {
+                var serviceException = (ServiceException)exception.InnerException;
+
+                if (serviceException.Error != null) throw new ApplicationException(serviceException.Error.ToString());
+            }
+
+            throw new ApplicationException(exception.ToString());
+        }
+
+        /// <summary>
         /// Executes the task using a method that allows message processing on the calling thread.
         /// </summary>
         /// <typeparam name="T">The data type to return.</typeparam>
@@ -56,16 +74,7 @@ namespace Sage.Office365.Graph
 
             task.WaitWithPumping();
 
-            if (task.IsFaulted)
-            {
-                if ((task.Exception != null) && (task.Exception.InnerException != null) && (task.Exception.InnerException is ServiceException))
-                {
-                    var serviceException = (ServiceException)task.Exception.InnerException;
-
-                    if (serviceException.Error != null) throw new ApplicationException(serviceException.Error.ToString());
-                }
-                throw new ApplicationException(task.Exception.ToString());
-            }
+            if (task.IsFaulted) ThrowException(task.Exception);
             if (task.IsCanceled) throw new OperationCanceledException("The task was cancelled.");
 
             return task.Result;
