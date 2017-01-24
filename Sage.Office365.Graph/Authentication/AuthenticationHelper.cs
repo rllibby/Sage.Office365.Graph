@@ -47,7 +47,7 @@ namespace Sage.Office365.Graph.Authentication
 
                 _graphClient = new GraphServiceClient(authenticationProvider);
             }
-            catch
+            catch (Exception)
             {
                 _graphClient = null;
 
@@ -92,7 +92,7 @@ namespace Sage.Office365.Graph.Authentication
 
                     task.WaitWithPumping();
 
-                    if (task.IsFaulted) throw new ApplicationException("Failed to authenticate with Office 365.");
+                    if (task.IsFaulted) throw task.Exception;
                 }
                 catch
                 {
