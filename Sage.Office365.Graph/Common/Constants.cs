@@ -19,5 +19,10 @@ namespace Sage.Office365.Graph.Common
         /// Root drive reference for Office 365.
         /// </summary>
         public const string DriveRoot = "/drive/root:";
+
+        /// <summary>
+        /// Maximum chunk size for file transfers.
+        /// </summary>
+        public const int MaxChunkSize = 4 * 1024 * 1024;
     }
 }

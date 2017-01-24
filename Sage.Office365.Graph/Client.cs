@@ -9,6 +9,8 @@ using Sage.Office365.Graph.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Sage.Office365.Graph
@@ -43,6 +45,26 @@ namespace Sage.Office365.Graph
         #endregion
 
         #region Private methods
+
+        /// <summary> 
+        /// Reads a file fragment from the stream.
+        /// </summary> 
+        /// <param name="stream">The file stream to read from.</param> 
+        /// <param name="position">The position to start reading from.</param> 
+        /// <param name="count">The number of bytes to read.</param> 
+        /// <returns>The fragment of file with byte[].</returns> 
+        private byte[] ReadFileFragment(Stream stream, long position, int count)
+        {
+            if ((position >= stream.Length) || (position < 0) || (count <= 0)) return null;
+
+            var trimCount = ((position + count) > stream.Length) ? (stream.Length - position) : count;
+            var result = new byte[trimCount];
+
+            stream.Seek(position, SeekOrigin.Begin);
+            stream.Read(result, 0, (int)trimCount);
+
+            return result;
+        }
 
         /// <summary>
         /// Formats the drive path by removing any leading "/drive/root:" reference, as well as any
@@ -96,6 +118,20 @@ namespace Sage.Office365.Graph
             }
 
             throw new ApplicationException(exception.ToString());
+        }
+
+        /// <summary>
+        /// Executes the task using a method that allows message processing on the calling thread.
+        /// </summary>
+        /// <param name="task">The task to execute.</param>
+        private void ExecuteTask(Task task)
+        {
+            if (task == null) throw new ArgumentNullException("task");
+
+            task.WaitWithPumping();
+
+            if (task.IsFaulted) ThrowException(task.Exception);
+            if (task.IsCanceled) throw new OperationCanceledException("The task was cancelled.");
         }
 
         /// <summary>
@@ -285,9 +321,36 @@ namespace Sage.Office365.Graph
 
             using (var stream = new FileStream(localFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                var newItem = ExecuteTask(_helper.Client.Me.Drive.Items[folder.Id].Children[Path.GetFileName(localFile)].Content.Request().PutAsync<DriveItem>(stream));
+                var position = 0L;
+                var totalLength = stream.Length;
+                var remotePath = GetQualifiedPath(folder);
+                var remoteFile = (string.IsNullOrEmpty(remotePath) ? Path.GetFileName(localFile) : string.Format("{0}/{1}", remotePath, Path.GetFileName(localFile)));
+                var session = ExecuteTask(_helper.Client.Me.Drive.Root.ItemWithPath(remoteFile).CreateUploadSession().Request().PostAsync());
 
-                return newItem;                   
+                while (position < totalLength)
+                {
+                    var bytes = ReadFileFragment(stream, position, Common.Constants.MaxChunkSize);
+
+                    using (var request = new HttpRequestMessage(HttpMethod.Put, session.UploadUrl))
+                    {
+                        ExecuteTask(_helper.Client.AuthenticationProvider.AuthenticateRequestAsync(request));
+
+                        request.Content = new ByteArrayContent(bytes);
+                        request.Content.Headers.ContentRange = new ContentRangeHeaderValue(position, (position + bytes.Length) - 1, totalLength);
+
+                        position += bytes.Length;
+
+                        using (var client = new HttpClient())
+                        {
+                            using (var response = ExecuteTask(client.SendAsync(request)))
+                            {
+                                response.EnsureSuccessStatusCode();
+                            }
+                        }
+                    }
+                }
+
+                return GetItem(remoteFile);
             }
         }
 
