@@ -256,7 +256,7 @@ namespace Sage.Office365.Graph
         {
             if ((file == null) || (file.File == null)) throw new ArgumentNullException("file");
             if (string.IsNullOrEmpty(localPath)) throw new ArgumentNullException("localPath");
-            if (!Directory.Exists(localPath)) throw new DirectoryNotFoundException();
+            if (!Directory.Exists(localPath)) Directory.CreateDirectory(localPath);
 
             var localFile = Path.Combine(localPath, file.Name);
 
