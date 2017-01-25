@@ -37,7 +37,7 @@ namespace Sage.Office365.Graph
             if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException("clientId");
 
             _clientId = clientId;
-            _helper = new AuthenticationHelper(new AuthenticationStore(_clientId, Scope.System), _clientId);
+            _helper = new AuthenticationHelper(new DesktopAuthenticationStore(_clientId, Scope.System), _clientId);
 
             SignIn();
         }

@@ -64,7 +64,8 @@
   <ItemGroup>
     <Compile Include="Authentication\AuthenticationHelper.cs" />
     <Compile Include="Authentication\AuthenticationProvider.cs" />
-    <Compile Include="Authentication\AuthenticationStore.cs" />
+    <Compile Include="Authentication\DebugAuthenticationStore.cs" />
+    <Compile Include="Authentication\DesktopAuthenticationStore.cs" />
     <Compile Include="Authentication\IAuthenticationStore.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Common\Constants.cs" />
