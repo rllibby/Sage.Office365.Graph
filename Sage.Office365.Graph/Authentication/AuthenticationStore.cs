@@ -4,12 +4,29 @@
  */
 
 using System;
-using System.Diagnostics;
+using System.Security.Cryptography;
 using System.IO;
 using System.IO.IsolatedStorage;
+using System.Text;
 
 namespace Sage.Office365.Graph.Authentication
 {
+    /// <summary>
+    /// Protection level scope for the store.
+    /// </summary>
+    public enum Scope
+    {
+        /// <summary>
+        /// The store is scoped to the user.
+        /// </summary>
+        User,
+
+        /// <summary>
+        /// The store is scoped to the system.
+        /// </summary>
+        System
+    }
+
     /// <summary>
     /// Class for maintaining user isolated data.
     /// </summary>
@@ -17,7 +34,9 @@ namespace Sage.Office365.Graph.Authentication
     {
         #region Private fields
 
+        private static byte[] _entropy = Encoding.ASCII.GetBytes(typeof(AuthenticationStore).Name);
         private IsolatedStorageFile _isoStore;
+        private Scope _scope;
         private string _refreshToken;
         private string _clientId;
         private bool _disposed;
@@ -25,6 +44,26 @@ namespace Sage.Office365.Graph.Authentication
         #endregion
 
         #region Private methods
+
+        /// <summary>
+        /// Encrypts the data using data protection api.
+        /// </summary>
+        /// <param name="data">The data to encrypt.</param>
+        /// <returns>The encrypted data on success, throws on failure.</returns>
+        public byte[] Protect(byte[] data)
+        {
+            return ProtectedData.Protect(data, _entropy, (_scope == Scope.User) ? DataProtectionScope.CurrentUser : DataProtectionScope.LocalMachine);
+        }
+
+        /// <summary>
+        /// Decrypts the data using data protection api.
+        /// </summary>
+        /// <param name="data">The encrypted data to decrypt.</param>
+        /// <returns>The original unencrypted data.</returns>
+        public byte[] Unprotect(byte[] data)
+        {
+            return ProtectedData.Unprotect(data, _entropy, (_scope == Scope.User) ? DataProtectionScope.CurrentUser : DataProtectionScope.LocalMachine);
+        }
 
         /// <summary>
         /// Loads the refresh token from isolated storage.
@@ -92,7 +131,7 @@ namespace Sage.Office365.Graph.Authentication
         /// Constructor.
         /// </summary>
         /// <param name="clientId">The client id to maintain the refresh token for.</param>
-        public AuthenticationStore(string clientId)
+        public AuthenticationStore(string clientId, )
         {
             if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException("clientId");
 
