@@ -389,7 +389,7 @@ namespace Sage.Office365.Graph.Authentication
 
         /// <summary>
         /// Adds the current access token to the request headers. This method will silently refresh the access
-        /// token, if needed and a refresh token is present. If the refresh token is expired or invalid the user
+        /// token if needed (refresh token is present). If the refresh token is expired or invalid the user
         /// will be prompted to login again.
         /// </summary>
         /// <param name="request">The <see cref="HttpRequestMessage"/> to authenticate.</param>
@@ -420,6 +420,30 @@ namespace Sage.Office365.Graph.Authentication
             }
 
             await AuthenticateAsync();
+        }
+
+        #endregion
+
+        #region Public properties
+
+        /// <summary>
+        /// Returns the access token.
+        /// </summary>
+        public string AccessToken
+        {
+            get { return _accessToken; }
+        }
+
+        /// <summary>
+        /// The refresh token.
+        /// </summary>
+        public string RefreshToken
+        {
+            get { return _refreshToken; }
+            set
+            {
+                _store.RefreshToken = _refreshToken = value;
+            }
         }
 
         #endregion
