@@ -8,33 +8,40 @@ using System.Security.Cryptography;
 using System.IO;
 using System.IO.IsolatedStorage;
 using System.Text;
-using System.Linq;
 
 namespace Sage.Office365.Graph.Authentication
 {
     /// <summary>
-    /// Class for maintaining user isolated data.
+    /// Class for maintaining user isolated data for WinForm/WPF/Legacy based code.
     /// </summary>
-    public sealed class AuthenticationStore : IAuthenticationStore
+    public sealed class DesktopAuthenticationStore : IAuthenticationStore
     {
         #region Private fields
 
-        private static byte[] _entropy = Encoding.ASCII.GetBytes(typeof(AuthenticationStore).Name);
+        private static byte[] _entropy = Encoding.ASCII.GetBytes(typeof(DesktopAuthenticationStore).Name);
         private readonly Scope _scope;
         private readonly string _clientId;
         private string _refreshToken;
-        private bool _disposed;
 
         #endregion
 
         #region Private methods
 
         /// <summary>
+        /// Returns the isolated storage folder based on scope.
+        /// </summary>
+        /// <returns></returns>
+        private IsolatedStorageFile GetStore()
+        {
+            return IsolatedStorageFile.GetStore(((_scope == Scope.User) ? IsolatedStorageScope.User : IsolatedStorageScope.Machine) | IsolatedStorageScope.Assembly, typeof(System.Security.Policy.Url), typeof(System.Security.Policy.Url));
+        }
+
+        /// <summary>
         /// Encrypts the data using data protection api.
         /// </summary>
         /// <param name="data">The data to encrypt.</param>
         /// <returns>The encrypted data on success, throws on failure.</returns>
-        public byte[] Protect(byte[] data)
+        private byte[] Protect(byte[] data)
         {
             return ProtectedData.Protect(data, _entropy, (_scope == Scope.User) ? DataProtectionScope.CurrentUser : DataProtectionScope.LocalMachine);
         }
@@ -44,7 +51,7 @@ namespace Sage.Office365.Graph.Authentication
         /// </summary>
         /// <param name="data">The encrypted data to decrypt.</param>
         /// <returns>The original unencrypted data.</returns>
-        public byte[] Unprotect(byte[] data)
+        private byte[] Unprotect(byte[] data)
         {
             return ProtectedData.Unprotect(data, _entropy, (_scope == Scope.User) ? DataProtectionScope.CurrentUser : DataProtectionScope.LocalMachine);
         }
@@ -58,7 +65,7 @@ namespace Sage.Office365.Graph.Authentication
 
             try
             {
-                using (var isoStore = IsolatedStorageFile.GetStore(((_scope == Scope.User) ? IsolatedStorageScope.User : IsolatedStorageScope.Machine) | IsolatedStorageScope.Assembly, typeof(System.Security.Policy.Url), typeof(System.Security.Policy.Url)))
+                using (var isoStore = GetStore())
                 {
                     if (!isoStore.FileExists(string.Format("{0}.token", _clientId))) return;
 
@@ -70,6 +77,10 @@ namespace Sage.Office365.Graph.Authentication
                         }
                     }
                 }
+            }
+            catch (Exception)
+            {
+                persisted = null;
             }
             finally
             {
@@ -85,7 +96,7 @@ namespace Sage.Office365.Graph.Authentication
         {
             _refreshToken = token;
 
-            using (var isoStore = IsolatedStorageFile.GetStore(((_scope == Scope.User) ? IsolatedStorageScope.User : IsolatedStorageScope.Machine) | IsolatedStorageScope.Assembly, typeof(System.Security.Policy.Url), typeof(System.Security.Policy.Url)))
+            using (var isoStore = GetStore())
             {
                 using (var writer = new BinaryWriter(new IsolatedStorageFileStream(string.Format("{0}.token", _clientId), FileMode.Create, isoStore)))
                 {
@@ -111,7 +122,7 @@ namespace Sage.Office365.Graph.Authentication
         /// Constructor.
         /// </summary>
         /// <param name="clientId">The client id to maintain the refresh token for.</param>
-        public AuthenticationStore(string clientId, Scope scope)
+        public DesktopAuthenticationStore(string clientId, Scope scope)
         {
             if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException("clientId");
 

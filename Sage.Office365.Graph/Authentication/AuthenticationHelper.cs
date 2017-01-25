@@ -68,7 +68,7 @@ namespace Sage.Office365.Graph.Authentication
             if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException("clientId");
 
             _clientId = clientId;
-            _store = (store == null) ? new AuthenticationStore(clientId, Scope.System) : store; 
+            _store = (store == null) ? new DesktopAuthenticationStore(clientId, Scope.System) : store; 
         }
 
         #endregion
