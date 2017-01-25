@@ -17,10 +17,17 @@ namespace Sage.Office365.Graph.Authentication
     {
         #region Private constants
 
+        private readonly IAuthenticationStore _store;
         private GraphServiceClient _graphClient;
-        private object _lock = new object();
-        
-        private string _clientId;
+        private readonly object _lock = new object();
+        private readonly string _clientId;
+        private readonly static string[] _scopes =   {
+                                                "offline_access",
+                                                "https://graph.microsoft.com/Files.ReadWrite",
+                                                "https://graph.microsoft.com/Group.ReadWrite.All",
+                                                "https://graph.microsoft.com/Directory.ReadWrite.All",
+                                                "https://graph.microsoft.com/Directory.AccessAsUser.All",
+                                            };
 
         #endregion
 
@@ -32,14 +39,7 @@ namespace Sage.Office365.Graph.Authentication
         /// <returns></returns>
         private async Task AquireGraphClient(string clientId)
         {
-            var authenticationProvider = new OAuth2AuthenticationProvider(clientId, Common.Constants.RedirectUri, new string[]
-                {
-                    "offline_access",
-                    "https://graph.microsoft.com/Files.ReadWrite",
-                    "https://graph.microsoft.com/Group.ReadWrite.All",
-                    "https://graph.microsoft.com/Directory.ReadWrite.All",
-                    "https://graph.microsoft.com/Directory.AccessAsUser.All",
-                });
+            var authenticationProvider = new OAuth2AuthenticationProvider(_store, clientId, Common.Constants.RedirectUri, _scopes);
 
             try
             {
@@ -63,11 +63,12 @@ namespace Sage.Office365.Graph.Authentication
         /// Constructor.
         /// </summary>
         /// <param name="clientId">The client id to create the helper for.</param>
-        public AuthenticationHelper(string clientId)
+        public AuthenticationHelper(IAuthenticationStore store, string clientId)
         {
             if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException("clientId");
 
             _clientId = clientId;
+            _store = (store == null) ? new AuthenticationStore(clientId, Scope.System) : store; 
         }
 
         #endregion
@@ -111,10 +112,7 @@ namespace Sage.Office365.Graph.Authentication
         {
             try
             {
-                using (var store = new AuthenticationStore(_clientId))
-                {
-                    store.RefreshToken = string.Empty;
-                }
+                _store.RefreshToken = string.Empty;
             }
             finally
             {
