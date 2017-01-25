@@ -49,6 +49,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -64,6 +65,7 @@
     <Compile Include="Authentication\AuthenticationHelper.cs" />
     <Compile Include="Authentication\AuthenticationProvider.cs" />
     <Compile Include="Authentication\AuthenticationStore.cs" />
+    <Compile Include="Authentication\IAuthenticationStore.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Common\Constants.cs" />
     <Compile Include="Extensions\TaskExtensions.cs" />

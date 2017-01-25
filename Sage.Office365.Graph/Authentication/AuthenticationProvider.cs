@@ -94,6 +94,7 @@ namespace Sage.Office365.Graph.Authentication
 
         private IHttpProvider _httpProvider;
         private DateTimeOffset _expiration;
+        private IAuthenticationStore _store;
         private string _clientId;
         private string[] _scopes;
         private string _returnUrl;
@@ -184,11 +185,7 @@ namespace Sage.Office365.Graph.Authentication
                         _refreshToken = responseValues[Authentication.RefreshTokenKeyName];
                         _accessToken = responseValues[Authentication.AccessTokenKeyName];
                         _expiration = DateTimeOffset.UtcNow.Add(new TimeSpan(0, 0, int.Parse(responseValues[Authentication.ExpiresInKeyName])));
-
-                        using (var store = new AuthenticationStore(_clientId))
-                        {
-                            store.RefreshToken = _refreshToken;
-                        }
+                        _store.RefreshToken = _refreshToken;
                             
                         return;
                     }
@@ -301,8 +298,18 @@ namespace Sage.Office365.Graph.Authentication
         /// <param name="returnUrl">The redirect uri for authentication.</param>
         /// <param name="scopes">The requested scopes.</param>
         /// <param name="httpProvider">The optional HttpProvider.</param>
-        public OAuth2AuthenticationProvider(string clientId, string returnUrl, string[] scopes, IHttpProvider httpProvider = null)
+        public OAuth2AuthenticationProvider(IAuthenticationStore store, string clientId, string returnUrl, string[] scopes, IHttpProvider httpProvider = null)
         {
+            if (store == null)
+            {
+                throw new ServiceException(
+                    new Error
+                    {
+                        Code = GraphErrorCode.ServiceNotAvailable.ToString(),
+                        Message = "An authentication store is required when using OAuth2AuthenticationProvider.",
+                    });
+            }
+
             if (string.IsNullOrEmpty(clientId))
             {
                 throw new ServiceException(
@@ -333,11 +340,8 @@ namespace Sage.Office365.Graph.Authentication
                     });
             }
 
-            using (var store = new AuthenticationStore(clientId))
-            {
-                _refreshToken = store.RefreshToken;
-            }
-
+            _store = store;
+            _refreshToken = _store.RefreshToken;
             _httpProvider = httpProvider ?? new HttpProvider();
             _clientId = clientId;
             _returnUrl = returnUrl;
@@ -364,11 +368,7 @@ namespace Sage.Office365.Graph.Authentication
                 catch
                 {
                     _refreshToken = null;
-
-                    using (var store = new AuthenticationStore(_clientId))
-                    {
-                        store.RefreshToken = _refreshToken;
-                    }
+                    _store.RefreshToken = _refreshToken;
                 }
             }
 
@@ -410,12 +410,7 @@ namespace Sage.Office365.Graph.Authentication
             }
             catch
             {
-                _refreshToken = null;
-
-                using (var store = new AuthenticationStore(_clientId))
-                {
-                    store.RefreshToken = _refreshToken;
-                }
+                _store.RefreshToken = _refreshToken = null;
             }
 
             if (!string.IsNullOrEmpty(_accessToken))

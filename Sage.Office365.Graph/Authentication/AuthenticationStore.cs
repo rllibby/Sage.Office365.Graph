@@ -4,22 +4,25 @@
  */
 
 using System;
-using System.Diagnostics;
+using System.Security.Cryptography;
 using System.IO;
 using System.IO.IsolatedStorage;
+using System.Text;
+using System.Linq;
 
 namespace Sage.Office365.Graph.Authentication
 {
     /// <summary>
     /// Class for maintaining user isolated data.
     /// </summary>
-    public sealed class AuthenticationStore : IDisposable
+    public sealed class AuthenticationStore : IAuthenticationStore
     {
         #region Private fields
 
-        private IsolatedStorageFile _isoStore;
+        private static byte[] _entropy = Encoding.ASCII.GetBytes(typeof(AuthenticationStore).Name);
+        private readonly Scope _scope;
+        private readonly string _clientId;
         private string _refreshToken;
-        private string _clientId;
         private bool _disposed;
 
         #endregion
@@ -27,24 +30,50 @@ namespace Sage.Office365.Graph.Authentication
         #region Private methods
 
         /// <summary>
+        /// Encrypts the data using data protection api.
+        /// </summary>
+        /// <param name="data">The data to encrypt.</param>
+        /// <returns>The encrypted data on success, throws on failure.</returns>
+        public byte[] Protect(byte[] data)
+        {
+            return ProtectedData.Protect(data, _entropy, (_scope == Scope.User) ? DataProtectionScope.CurrentUser : DataProtectionScope.LocalMachine);
+        }
+
+        /// <summary>
+        /// Decrypts the data using data protection api.
+        /// </summary>
+        /// <param name="data">The encrypted data to decrypt.</param>
+        /// <returns>The original unencrypted data.</returns>
+        public byte[] Unprotect(byte[] data)
+        {
+            return ProtectedData.Unprotect(data, _entropy, (_scope == Scope.User) ? DataProtectionScope.CurrentUser : DataProtectionScope.LocalMachine);
+        }
+
+        /// <summary>
         /// Loads the refresh token from isolated storage.
         /// </summary>
         private void LoadRefreshToken()
         {
-            var persisted = string.Empty;
+            byte[] persisted = null;
 
             try
             {
-                if (!_isoStore.FileExists(string.Format("{0}.token", _clientId))) return;
-
-                using (var reader = new StreamReader(new IsolatedStorageFileStream(string.Format("{0}.token", _clientId), FileMode.Open, _isoStore)))
+                using (var isoStore = IsolatedStorageFile.GetStore(((_scope == Scope.User) ? IsolatedStorageScope.User : IsolatedStorageScope.Machine) | IsolatedStorageScope.Assembly, typeof(System.Security.Policy.Url), typeof(System.Security.Policy.Url)))
                 {
-                    persisted = reader.ReadToEnd();
+                    if (!isoStore.FileExists(string.Format("{0}.token", _clientId))) return;
+
+                    using (var reader = new BinaryReader(new IsolatedStorageFileStream(string.Format("{0}.token", _clientId), FileMode.Open, isoStore)))
+                    {
+                        if (reader.BaseStream.Length > 0)
+                        {
+                            persisted = reader.ReadBytes((int)reader.BaseStream.Length);
+                        }
+                    }
                 }
             }
             finally
             {
-                _refreshToken = persisted;
+                _refreshToken = (persisted == null) ? string.Empty : Encoding.UTF8.GetString(Unprotect(persisted));
             }
         }
 
@@ -56,31 +85,21 @@ namespace Sage.Office365.Graph.Authentication
         {
             _refreshToken = token;
 
-            using (var writer = new StreamWriter(new IsolatedStorageFileStream(string.Format("{0}.token", _clientId), FileMode.Create, _isoStore)))
+            using (var isoStore = IsolatedStorageFile.GetStore(((_scope == Scope.User) ? IsolatedStorageScope.User : IsolatedStorageScope.Machine) | IsolatedStorageScope.Assembly, typeof(System.Security.Policy.Url), typeof(System.Security.Policy.Url)))
             {
-                writer.Write(_refreshToken);
-            }
-        }
-
-        /// <summary>
-        /// Resource cleanup.
-        /// </summary>
-        /// <param name="disposing">True if being disposed.</param>
-        private void Dispose(bool disposing)
-        {
-            if (!disposing || _disposed) return;
-
-            try
-            {
-                if (_isoStore != null)
+                using (var writer = new BinaryWriter(new IsolatedStorageFileStream(string.Format("{0}.token", _clientId), FileMode.Create, isoStore)))
                 {
-                    _isoStore.Dispose();
-                    _isoStore = null;
+                    if (string.IsNullOrEmpty(token))
+                    {
+                        writer.Write(string.Empty);
+
+                        return;
+                    }
+
+                    var encrypted = Protect(Encoding.UTF8.GetBytes(token));
+
+                    writer.Write(encrypted);
                 }
-            }
-            finally
-            {
-                _disposed = true;
             }
         }
 
@@ -92,32 +111,27 @@ namespace Sage.Office365.Graph.Authentication
         /// Constructor.
         /// </summary>
         /// <param name="clientId">The client id to maintain the refresh token for.</param>
-        public AuthenticationStore(string clientId)
+        public AuthenticationStore(string clientId, Scope scope)
         {
             if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException("clientId");
 
             _clientId = clientId;
-            _isoStore = IsolatedStorageFile.GetStore(IsolatedStorageScope.User | IsolatedStorageScope.Assembly, typeof(System.Security.Policy.Url), typeof(System.Security.Policy.Url));
+            _scope = scope;
 
             LoadRefreshToken();
         }
 
         #endregion
 
-        #region Public methods
+        #region Public properties
 
         /// <summary>
-        ///  Resource cleanup.
+        /// The client id being managed by the storage class.
         /// </summary>
-        public void Dispose()
+        public string ClientId
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            get { return _clientId; }
         }
-
-        #endregion
-
-        #region Private properties
 
         /// <summary>
         /// The refresh token being maintained for the client.
@@ -126,6 +140,14 @@ namespace Sage.Office365.Graph.Authentication
         {
             get { return _refreshToken; }
             set { SaveRefreshToken(value); }
+        }
+
+        /// <summary>
+        /// Returns the scope for the storage.
+        /// </summary>
+        public Scope Scope
+        {
+            get { return _scope; }
         }
 
         #endregion
