@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Readme.txt = Readme.txt
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sage.Office365.Graph.Authentication", "Sage.Office365.Graph.Authentication\Sage.Office365.Graph.Authentication.csproj", "{4BD8E862-04BB-4B96-9443-FEE7BF424064}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{30A32E4F-FAC6-47DD-84B8-F849C70B702C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30A32E4F-FAC6-47DD-84B8-F849C70B702C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30A32E4F-FAC6-47DD-84B8-F849C70B702C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BD8E862-04BB-4B96-9443-FEE7BF424064}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BD8E862-04BB-4B96-9443-FEE7BF424064}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BD8E862-04BB-4B96-9443-FEE7BF424064}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BD8E862-04BB-4B96-9443-FEE7BF424064}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

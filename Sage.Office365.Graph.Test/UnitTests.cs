@@ -5,7 +5,10 @@
 
 using Microsoft.Graph;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+using Sage.Office365.Graph.Authentication;
+using Sage.Office365.Graph.Authentication.Common;
+using Sage.Office365.Graph.Authentication.Interfaces;
+using Sage.Office365.Graph.Authentication.Storage;
 using System.Diagnostics;
 
 namespace Sage.Office365.Graph.Test
@@ -13,86 +16,164 @@ namespace Sage.Office365.Graph.Test
     [TestClass]
     public class UnitTests
     {
-        #region Private methods
-
-        /// <summary>
-        /// Recursively enumerates the items in One Drive.
-        /// </summary>
-        /// <param name="client">The client being operate3d on.</param>
-        /// <param name="item">The drive item to process</param>
-        private void EnumerateItem(Client client, DriveItem item)
-        {
-            if (item == null) return;
-
-            Debug.WriteLine(client.GetQualifiedPath(item));
-
-            if (item.File != null) return;
-
-            var children = client.GetChildren(item);
-
-            foreach (var subItem in children) EnumerateItem(client, subItem);
-        }
-
-        #endregion
-
         #region Public constants
 
-        public const string ValidClientId = "2585caa5-8695-4945-9da7-6d6a73c5b172";
-        public const string InvalidClientId = "2995caa5-8695-4945-9da7-6d6a73c5b172";
+        public const string ClientId = "b85030a0-4aaa-4777-a80c-5553f949f745";
+        public const string ClientSecret = "gEREtebjT3HedPakTTP2Rrc";
+        public const string TenantId = "b366b438-32ef-4f31-81f9-0c2214ec7d87";
+        public const string AdminRedirect = "http://localhost/sagepaperless";
 
         #endregion
 
         [TestMethod]
-        [ExpectedException(typeof(ApplicationException))]
-        public void Test_InvalidClientId()
+        [TestCategory("Provider")]
+        public void Test_ProviderUser()
         {
-            var client = Client.Create(InvalidClientId);
+            var provider = new AuthenticationProvider(ClientId);
+
+            Assert.IsNotNull(provider);
         }
 
         [TestMethod]
-        public void Test_ValidClientId()
+        [TestCategory("Provider")]
+        public void Test_ProviderApp()
         {
-            var client = Client.Create(ValidClientId);
+            var provider = new AuthenticationProvider(ClientId, ClientSecret, TenantId);
+
+            Assert.IsNotNull(provider);
         }
 
         [TestMethod]
-        public void Test_SignOut()
+        [TestCategory("Provider")]
+        public void Test_ProviderAuth()
         {
-            var client = Client.Create(ValidClientId);
+            var provider = new AuthenticationProvider(ClientId);
 
-            client.SignOut();
+            Assert.IsNotNull(provider);
+
+            var task = provider.AuthenticateAsync();
+
+            task.Wait();
+
+            Assert.IsTrue(provider.Authenticated);
         }
 
         [TestMethod]
-        public void Test_Me()
+        [TestCategory("Provider")]
+        public void Test_ProviderAuthStore()
         {
-            var client = Client.Create(ValidClientId);
-            var me = client.Me();
+            var store = new DesktopAuthenticationStore(ClientId, Scope.User);
+            var provider = new AuthenticationProvider(ClientId, store);
 
-            Assert.IsFalse(string.IsNullOrEmpty(me.DisplayName));
-            Assert.IsFalse(string.IsNullOrEmpty(me.UserPrincipalName));
+            Assert.IsNotNull(provider);
+
+            var task = provider.AuthenticateAsync();
+
+            task.Wait();
+
+            Assert.IsTrue(provider.Authenticated);
+
+            provider = new AuthenticationProvider(ClientId, store);
+
+            task = provider.AuthenticateAsync();
+            task.Wait();
         }
 
         [TestMethod]
-        public void Test_RootItems()
+        [TestCategory("Provider")]
+        public void Test_ProviderLogout()
         {
-            var client = Client.Create(ValidClientId);
-            var items = client.GetChildren(null);
+            var store = new DesktopAuthenticationStore(ClientId, Scope.User);
+            var provider = new AuthenticationProvider(ClientId, store);
 
-            Assert.IsFalse(items.Count == 0);
+            Assert.IsNotNull(provider);
+
+            var task = provider.AuthenticateAsync();
+
+            task.Wait();
+
+            provider.Logout();
         }
 
+        [TestMethod]
+        [TestCategory("Provider")]
+        public void Test_ProviderAuthApp()
+        {
+            var provider = new AuthenticationProvider(ClientId, ClientSecret, TenantId);
+
+            Assert.IsNotNull(provider);
+
+            var task = provider.AuthenticateAsync();
+
+            task.Wait();
+
+            Assert.IsTrue(provider.Authenticated);
+        }
 
         [TestMethod]
-        public void Test_EnumerateDrive()
+        [TestCategory("Provider")]
+        public void Test_ProviderAdminConsent()
         {
-            var client = Client.Create(ValidClientId);
-            var items = client.GetChildren(null);
+            var provider = new AuthenticationProvider(ClientId, ClientSecret, TenantId);
 
-            foreach (var item in items)
-            {
-                EnumerateItem(client, item);
-            }
+            Assert.IsNotNull(provider);
+            Assert.IsTrue(provider.GetAdminConsent(AdminRedirect));
+        }
+
+        [TestMethod]
+        [TestCategory("Provider")]
+        [ExpectedException(typeof(ServiceException))]
+        public void Test_ProviderAdminConsentBadRedirect()
+        {
+            var provider = new AuthenticationProvider(ClientId, ClientSecret, TenantId);
+
+            Assert.IsNotNull(provider);
+            Assert.IsTrue(provider.GetAdminConsent("http://localhost"));
+        }
+
+        [TestMethod]
+        [TestCategory("Provider")]
+        public void Test_ProviderAppProperties()
+        {
+            var provider = new AuthenticationProvider(ClientId, ClientSecret, TenantId);
+            var task = provider.AuthenticateAsync();
+
+            task.Wait();
+
+            Assert.IsTrue(provider.AppBased);
+            Assert.IsTrue(provider.Authenticated);
+            Assert.IsFalse(string.IsNullOrEmpty(provider.AccessToken));
+            Assert.IsTrue(provider.ClientId.Equals(ClientId));
+            Assert.IsNull(provider.RefreshToken);
+            Assert.IsTrue(provider.Scopes.Contains(GraphScopes.Default));
+            Assert.IsTrue(provider.TenantId.Equals(TenantId));
+
+            provider.Logout();
+        }
+
+        [TestMethod]
+        [TestCategory("Provider")]
+        public void Test_ProviderUserProperties()
+        {
+            var provider = new AuthenticationProvider(ClientId);
+
+            provider.Scopes.Add(GraphScopes.UserReadWriteAll);
+            provider.Scopes.Add(GraphScopes.FilesReadWriteAll);
+            provider.Scopes.Add(GraphScopes.GroupReadWriteAll);
+            provider.Scopes.Add(GraphScopes.DirectoryAccessAsUserAll);
+
+            var task = provider.AuthenticateAsync();
+
+            task.Wait();
+
+            Assert.IsFalse(provider.AppBased);
+            Assert.IsTrue(provider.Authenticated);
+            Assert.IsFalse(string.IsNullOrEmpty(provider.AccessToken));
+            Assert.IsTrue(provider.ClientId.Equals(ClientId));
+            Assert.IsNotNull(provider.RefreshToken);
+            Assert.IsNull(provider.TenantId);
+
+            provider.Logout();
         }
     }
 }

@@ -11,11 +11,6 @@ namespace Sage.Office365.Graph.Common
     public static class Constants
     {
         /// <summary>
-        /// The redirect URI for Azure AD.
-        /// </summary>
-        public const string RedirectUri = "urn:ietf:wg:oauth:2.0:oob";
-
-        /// <summary>
         /// Root drive reference for Office 365.
         /// </summary>
         public const string DriveRoot = "/drive/root:";

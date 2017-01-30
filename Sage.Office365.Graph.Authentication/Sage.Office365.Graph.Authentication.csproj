@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0A9BAEE9-2F5B-4085-BB1E-ECFFCA67DA2E}</ProjectGuid>
+    <ProjectGuid>{4BD8E862-04BB-4B96-9443-FEE7BF424064}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Sage.Office365.Graph</RootNamespace>
-    <AssemblyName>Sage.Office365.Graph</AssemblyName>
+    <RootNamespace>Sage.Office365.Graph.Authentication</RootNamespace>
+    <AssemblyName>Sage.Office365.Graph.Authentication</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>$(PROVIDEX)\Microsoft.NET\Sage.Office365.Graph\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -62,27 +62,24 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Client.cs" />
-    <Compile Include="Common\Constants.cs" />
-    <Compile Include="Extensions\TaskExtensions.cs" />
+    <Compile Include="AuthenticationProvider.cs" />
+    <Compile Include="Common\Endpoints.cs" />
+    <Compile Include="Common\Headers.cs" />
+    <Compile Include="Common\Params.cs" />
+    <Compile Include="Common\GraphScopes.cs" />
+    <Compile Include="Common\ServiceMessages.cs" />
+    <Compile Include="Interfaces\IAuthenticationProvider2.cs" />
+    <Compile Include="Interfaces\IAuthenticationStore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Sage.Office365.Graph.Authentication\Sage.Office365.Graph.Authentication.csproj">
-      <Project>{4bd8e862-04bb-4b96-9443-fee7bf424064}</Project>
-      <Name>Sage.Office365.Graph.Authentication</Name>
-    </ProjectReference>
+    <Compile Include="Storage\DebugAuthenticationStore.cs" />
+    <Compile Include="Storage\DesktopAuthenticationStore.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="ProvideX\graph.pvx" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>copy "$(ProjectDir)ProvideX\graph.pvx" "$(PROVIDEX)"
-copy "$(ProjectDir)ProvideX\graph_app.pvx" "$(PROVIDEX)"</PostBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
