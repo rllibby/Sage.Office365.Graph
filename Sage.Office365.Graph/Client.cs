@@ -8,135 +8,23 @@ using Sage.Office365.Graph.Authentication;
 using Sage.Office365.Graph.Authentication.Interfaces;
 using Sage.Office365.Graph.Authentication.Storage;
 using Sage.Office365.Graph.Extensions;
+using Sage.Office365.Graph.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 namespace Sage.Office365.Graph
 {
     /// <summary>
     /// Client class for Sage integration with Office 365 OneDrive
     /// </summary>
-    public class Client
+    public class Client : SynchronousHandler, IClient
     {
         #region Private fields
 
         private IAuthenticationProvider2 _provider;
         private GraphServiceClient _serviceClient;
         private User _principal;
-
-        #endregion
-
-        #region Private methods
-
-        /// <summary> 
-        /// Reads a file fragment from the stream.
-        /// </summary> 
-        /// <param name="stream">The file stream to read from.</param> 
-        /// <param name="position">The position to start reading from.</param> 
-        /// <param name="count">The number of bytes to read.</param> 
-        /// <returns>The fragment of file with byte[].</returns> 
-        private byte[] ReadFileFragment(Stream stream, long position, int count)
-        {
-            if ((position >= stream.Length) || (position < 0) || (count <= 0)) return null;
-
-            var trimCount = ((position + count) > stream.Length) ? (stream.Length - position) : count;
-            var result = new byte[trimCount];
-
-            stream.Seek(position, SeekOrigin.Begin);
-            stream.Read(result, 0, (int)trimCount);
-
-            return result;
-        }
-
-        /// <summary>
-        /// Formats the drive path by removing any leading "/drive/root:" reference, as well as any
-        /// leading '/' character.
-        /// </summary>
-        /// <param name="pathName">The path name to format.</param>
-        /// <returns>The formated path name.</returns>
-        private string FormatDrivePath(string pathName)
-        {
-            if (string.IsNullOrEmpty(pathName)) throw new ArgumentNullException("pathName");
-
-            var temp = (pathName.StartsWith(Common.Constants.DriveRoot, StringComparison.OrdinalIgnoreCase)) ? pathName.Remove(0, Common.Constants.DriveRoot.Length) : pathName;
-
-            return (temp.StartsWith("/")) ? temp.Remove(0, 1) : temp;
-        }
-
-        /// <summary>
-        /// Returns a list of all drive items in the root of One Drive for the logged in user.
-        /// </summary>
-        /// <returns>The list of drive items.</returns>
-        private IList<DriveItem> GetRootItems()
-        {
-            SignIn();
-
-            var rootPage = ExecuteTask(_serviceClient.Me.Drive.Root.Children.Request().GetAsync());
-            var result = new List<DriveItem>();
-
-            while (rootPage != null)
-            {
-                foreach (var item in rootPage.CurrentPage) result.Add(item);
-
-                rootPage = (rootPage.NextPageRequest == null) ? null : ExecuteTask(rootPage.NextPageRequest.GetAsync());
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Special handling for Graph service exceptions, where the Error field is more informative
-        /// than the exception itself.
-        /// </summary>
-        /// <param name="exception">The exception to process.</param>
-        private void ThrowException(Exception exception)
-        {
-            if (exception == null) return;
-            if ((exception.InnerException != null) && (exception.InnerException is ServiceException))
-            {
-                var serviceException = (ServiceException)exception.InnerException;
-
-                if (serviceException.Error != null) throw new ApplicationException(serviceException.Error.ToString());
-            }
-
-            throw new ApplicationException(exception.ToString());
-        }
-
-        /// <summary>
-        /// Executes the task using a method that allows message processing on the calling thread.
-        /// </summary>
-        /// <param name="task">The task to execute.</param>
-        private void ExecuteTask(Task task)
-        {
-            if (task == null) throw new ArgumentNullException("task");
-
-            task.WaitWithPumping();
-
-            if (task.IsFaulted) ThrowException(task.Exception);
-            if (task.IsCanceled) throw new OperationCanceledException("The task was cancelled.");
-        }
-
-        /// <summary>
-        /// Executes the task using a method that allows message processing on the calling thread.
-        /// </summary>
-        /// <typeparam name="T">The data type to return.</typeparam>
-        /// <param name="task">The task to execute.</param>
-        /// <returns>The result type from the task on success, throws on failure.</returns>
-        private T ExecuteTask<T>(Task<T> task)
-        {
-            if (task == null) throw new ArgumentNullException("task");
-
-            task.WaitWithPumping();
-
-            if (task.IsFaulted) ThrowException(task.Exception);
-            if (task.IsCanceled) throw new OperationCanceledException("The task was cancelled.");
-
-            return task.Result;
-        }
 
         #endregion
 
@@ -171,6 +59,33 @@ namespace Sage.Office365.Graph
         #endregion
 
         #region Public methods
+
+        /// <summary>
+        /// Gets the OneDrive based on the current principal.
+        /// </summary>
+        /// <returns>The instance of OneDrive for the current principal.</returns>
+        public IOneDrive OneDrive()
+        {
+            SignIn();
+
+            if (_principal == null) ThrowException(new ServiceException(new Error { Code = GraphErrorCode.InvalidRequest.ToString(), Message = "No user principal set for the client." }));
+
+            return new OneDrive(this, _principal);
+        }
+
+        /// <summary>
+        /// Sets the user principal by identifier.
+        /// </summary>
+        /// <param name="principalId">The identifier of the principal to lookup.</param>
+        /// <returns>True if the principal was found and set.</returns>
+        public void SetPrincipal(string principalId)
+        {
+            if (string.IsNullOrEmpty(principalId)) throw new ArgumentNullException("principalId");
+
+            SignIn();
+
+            _principal = ExecuteTask(_serviceClient.Users[principalId].Request().GetAsync());
+        }
 
         /// <summary>
         /// Sign the user in to the client.
