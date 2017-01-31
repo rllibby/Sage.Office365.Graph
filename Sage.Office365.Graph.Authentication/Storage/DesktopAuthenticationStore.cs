@@ -8,8 +8,9 @@ using System.Security.Cryptography;
 using System.IO;
 using System.IO.IsolatedStorage;
 using System.Text;
+using Sage.Office365.Graph.Authentication.Interfaces;
 
-namespace Sage.Office365.Graph.Authentication
+namespace Sage.Office365.Graph.Authentication.Storage
 {
     /// <summary>
     /// Class for maintaining user isolated data for WinForm/WPF/Legacy based code.
