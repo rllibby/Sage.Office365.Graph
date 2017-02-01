@@ -7,11 +7,9 @@ using Microsoft.Graph;
 using Sage.Office365.Graph.Authentication;
 using Sage.Office365.Graph.Authentication.Interfaces;
 using Sage.Office365.Graph.Authentication.Storage;
-using Sage.Office365.Graph.Extensions;
 using Sage.Office365.Graph.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Sage.Office365.Graph
 {
