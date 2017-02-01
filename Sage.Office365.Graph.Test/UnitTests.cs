@@ -9,6 +9,7 @@ using Sage.Office365.Graph.Authentication;
 using Sage.Office365.Graph.Authentication.Common;
 using Sage.Office365.Graph.Authentication.Interfaces;
 using Sage.Office365.Graph.Authentication.Storage;
+using System;
 using System.Diagnostics;
 
 namespace Sage.Office365.Graph.Test
@@ -174,6 +175,67 @@ namespace Sage.Office365.Graph.Test
             Assert.IsNull(provider.TenantId);
 
             provider.Logout();
+        }
+
+        [TestMethod]
+        [TestCategory("Client")]
+        public void Test_ClientExample()
+        {
+            var userClient = new Client(ClientId);
+
+            userClient.Provider.Scopes.Add(GraphScopes.UserReadWriteAll);
+            userClient.Provider.Scopes.Add(GraphScopes.FilesReadWriteAll);
+            userClient.Provider.Scopes.Add(GraphScopes.GroupReadWriteAll);
+            userClient.Provider.Scopes.Add(GraphScopes.DirectoryAccessAsUserAll);
+
+            userClient.SignIn();
+
+            var appClient = new Client(ClientId, ClientSecret, TenantId);
+
+            appClient.Provider.GetAdminConsent("http://localhost/sagepaperless");
+
+            appClient.SignIn();
+
+            Debug.WriteLine(string.Format("User Based Auth: {0}", userClient.Principal?.DisplayName));
+            Debug.WriteLine(string.Format("App Based Auth: {0}", appClient.Principal?.DisplayName));
+
+            var users = appClient.Users();
+
+            foreach (var user in users) Debug.WriteLine(user.DisplayName);
+
+            var principal = "ed515da4-5a63-40e4-aff8-3996f4fd987d";
+
+            appClient.SetPrincipal(principal);
+
+            Debug.WriteLine(string.Format("App Based Auth: {0}", appClient.Principal?.DisplayName));
+
+            var client = appClient; // userClient;
+
+            var drive = client.OneDrive();
+            var folders = drive.GetChildren();
+            var firstFolder = folders[0];
+
+            var subFolders = drive.GetChildren(firstFolder);
+
+            foreach (var subFolder in subFolders)
+            {
+                Debug.WriteLine(drive.GetQualifiedPath(subFolder));
+            }
+
+            var pdf = drive.GetItem("3031414246/PvxLanguage.pdf");
+
+            /* Downloads will fail when using the app based client */
+            drive.DownloadFile(pdf, "c:\\temp", true);
+
+            var temp = drive.CreateFolder(firstFolder, Guid.NewGuid().ToString());
+
+            /* Uploads over 4MB will fail when using the app based client */
+            drive.UploadFile(null, @"c:\temp\ProductKeys2017.docx");
+            drive.UploadFile(temp, @"c:\temp\ProductKeys2017.docx");
+            drive.UploadFile(null, @"c:\temp\PVXLanguage.pdf");
+            drive.UploadFile(temp, @"c:\temp\PVXLanguage.pdf");
+            
+            drive.DeleteItem(temp);
         }
     }
 }

@@ -16,6 +16,20 @@ namespace Sage.Office365.Graph.Interfaces
         #region Public methods
 
         /// <summary>
+        /// Creates a folder under the specified parent folder. If parentFolder is null, then the folder
+        /// will be created on the root of the drive.
+        /// </summary>
+        /// <param name="parentFolder">The parent folder to create the child folder under.</param>
+        /// <returns>The drive item for the new folder on success, throws on failure.</returns>
+        DriveItem CreateFolder(DriveItem parentFolder, string folderName);
+
+        /// <summary>
+        /// Deletes a file or folder from OneDrive.
+        /// </summary>
+        /// <param name="folderOrFile">The drive item representing the item to delete.</param>
+        void DeleteItem(DriveItem folderOrFile);
+
+        /// <summary>
         /// Downloads the file from One Drive into the folder specified by localPath. 
         /// </summary>
         /// <param name="file">The One Drive file to download.</param>
@@ -57,7 +71,8 @@ namespace Sage.Office365.Graph.Interfaces
         string GetQualifiedPath(DriveItem folderOrFile);
 
         /// <summary>
-        /// Uploads a local file into the specified One Drive folder.
+        /// Uploads a local file into the specified One Drive folder. If folder is null, then 
+        /// the file will be created on the root of the drive.
         /// </summary>
         /// <param name="folder">The One Drive folder to upload into.</param>
         /// <param name="localFile">The local file to upload.</param>

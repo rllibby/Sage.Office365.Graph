@@ -109,6 +109,30 @@ namespace Sage.Office365.Graph
 
         #region Public methods
 
+        /// <summary>
+        /// Creates a folder under the specified parent folder. If parentFolder is null, then the folder
+        /// will be created on the root of the drive.
+        /// </summary>
+        /// <param name="parentFolder">The parent folder to create the child folder under.</param>
+        /// <returns>The drive item for the new folder on success, throws on failure.</returns>
+        public DriveItem CreateFolder(DriveItem parentFolder, string folderName)
+        {
+            if ((parentFolder != null) && (parentFolder.Folder == null)) throw new ArgumentNullException("parentFolder");
+            if (string.IsNullOrEmpty(folderName)) throw new ArgumentNullException("folderName");
+
+            var subFolder = new DriveItem()
+            {
+                Name = folderName,
+                Folder = new Folder()
+            };
+
+            return (parentFolder == null) ? ExecuteTask(UserDrive.Root.Children.Request().AddAsync(subFolder)) : ExecuteTask(UserDrive.Items[parentFolder.Id].Children.Request().AddAsync(subFolder));
+        }
+
+        /// <summary>
+        /// Deletes a file or folder from OneDrive.
+        /// </summary>
+        /// <param name="folderOrFile">The drive item representing the item to delete.</param>
         public void DeleteItem(DriveItem folderOrFile)
         {
             if (folderOrFile == null) throw new ArgumentNullException("folderOrFile");
@@ -124,8 +148,6 @@ namespace Sage.Office365.Graph
         /// <param name="overWriteIfExists">Overwrites an existing file if set to true.</param>
         public void DownloadFile(DriveItem file, string localPath, bool overWriteIfExists = true)
         {
-            _client.SignIn();
-
             if ((file == null) || (file.File == null)) throw new ArgumentNullException("file");
             if (string.IsNullOrEmpty(localPath)) throw new ArgumentNullException("localPath");
             if (!Directory.Exists(localPath)) Directory.CreateDirectory(localPath);
@@ -216,14 +238,15 @@ namespace Sage.Office365.Graph
         }
 
         /// <summary>
-        /// Uploads a local file into the specified One Drive folder.
+        /// Uploads a local file into the specified One Drive folder. If folder is null, then 
+        /// the file will be created on the root of the drive.
         /// </summary>
         /// <param name="folder">The One Drive folder to upload into.</param>
         /// <param name="localFile">The local file to upload.</param>
         /// <returns>The drive item for the newly uploaded file.</returns>
         public DriveItem UploadFile(DriveItem folder, string localFile)
         {
-            if ((folder == null) || (folder.Folder == null)) throw new ArgumentNullException("folder");
+            if ((folder != null) && (folder.Folder == null)) throw new ArgumentNullException("folder");
             if (string.IsNullOrEmpty(localFile)) throw new ArgumentNullException("localFile");
             if (!System.IO.File.Exists(localFile)) throw new FileNotFoundException();
 
@@ -231,9 +254,16 @@ namespace Sage.Office365.Graph
 
             using (var stream = new FileStream(localFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
+                if (stream.Length < MaxChunkSize)
+                {
+                    var file = (folder == null) ? ExecuteTask(UserDrive.Root.Children[Path.GetFileName(localFile)].Content.Request().PutAsync<DriveItem>(stream)) : ExecuteTask(UserDrive.Items[folder.Id].Children[Path.GetFileName(localFile)].Content.Request().PutAsync<DriveItem>(stream));
+
+                    return file;
+                }
+
                 var position = 0L;
                 var totalLength = stream.Length;
-                var remotePath = GetQualifiedPath(folder);
+                var remotePath = (folder == null) ? null : GetQualifiedPath(folder);
                 var remoteFile = (string.IsNullOrEmpty(remotePath) ? Path.GetFileName(localFile) : string.Format("{0}/{1}", remotePath, Path.GetFileName(localFile)));
                 var session = ExecuteTask(UserDrive.Root.ItemWithPath(remoteFile).CreateUploadSession().Request().PostAsync());
 
