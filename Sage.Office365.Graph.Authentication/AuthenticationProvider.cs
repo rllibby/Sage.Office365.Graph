@@ -123,12 +123,9 @@ namespace Sage.Office365.Graph.Authentication
                         _accessToken = responseValues[Params.AccessTokenKeyName];
                         _expiration = DateTimeOffset.UtcNow.Add(new TimeSpan(0, 0, int.Parse(responseValues[Params.ExpiresInKeyName])));
 
-                        if (!_appBased)
-                        {
-                            _refreshToken = responseValues[Params.RefreshTokenKeyName];
+                        _refreshToken = (responseValues.ContainsKey(Params.RefreshTokenKeyName)) ? responseValues[Params.RefreshTokenKeyName] : null;
 
-                            if (_store != null) _store.RefreshToken = _refreshToken;
-                        }
+                        if (_store != null) _store.RefreshToken = _refreshToken;
 
                         return;
                     }
