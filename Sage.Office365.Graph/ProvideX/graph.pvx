@@ -3,16 +3,16 @@
 0030 CLR'ADD("Sage.Office365.Graph.Authentication")
 0040 LET CLR'NAMESPACE$="System,Sage.Office365.Graph,Sage.Office365.Graph.Authentication,Sage.Office365.Graph.Authentication.Common"
 0050 ESCAPE
-0060 LET USERCLIENT=CLR'CREATE("Client", "b85030a0-4aaa-4777-a80c-5553f949f745")
+0060 LET USERCLIENT=CLR'CREATE("Client", "85f30295-671e-445f-a909-11ea2c6c5897")
 0070 LET SCOPES=CLR'CREATE("GraphScopes")
 0080 USERCLIENT'Provider'Scopes'Add(SCOPES'UserReadWriteAll$)
 0090 USERCLIENT'Provider'Scopes'Add(SCOPES'FilesReadWriteAll$)
 0100 USERCLIENT'Provider'Scopes'Add(SCOPES'GroupReadWriteAll$)
 0110 USERCLIENT'Provider'Scopes'Add(SCOPES'DirectoryAccessAsUserAll$)
 0120 USERCLIENT'SignIn()
-0200 LET APPCLIENT=CLR'CREATE("Client", "b85030a0-4aaa-4777-a80c-5553f949f745", "gEREtebjT3HedPakTTP2Rrc", "b366b438-32ef-4f31-81f9-0c2214ec7d87")
+0200 LET APPCLIENT=CLR'CREATE("Client", "85f30295-671e-445f-a909-11ea2c6c5897", "oRuqtxjxdzbuttgjN8SjpLr", "b366b438-32ef-4f31-81f9-0c2214ec7d87")
 0210 INPUT(0)"Get admin consent [y/n]?: ",X$
-0220 IF ((X$="Y") OR (X$="y")) APPCLIENT'Provider'GetAdminConsent("http://localhost/sagepaperless")
+0220 IF ((X$="Y") OR (X$="y")) APPCLIENT'Provider'GetAdminConsent("http://localhost/testing")
 0230 APPCLIENT'SignIn()
 0240 ESCAPE
 0300 PRINT "User: ", USERCLIENT'Principal
