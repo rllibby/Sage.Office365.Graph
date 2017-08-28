@@ -18,6 +18,12 @@ namespace Sage.Office365.Graph
     /// </summary>
     public class Client : SynchronousHandler, IClient
     {
+        #region Private constants
+
+        private const string NoPrincipal = "No user principal set for the client.";
+
+        #endregion
+
         #region Private fields
 
         private IAuthenticationProvider2 _provider;
@@ -34,7 +40,7 @@ namespace Sage.Office365.Graph
         /// <param name="clientId">The client id for the application.</param>
         public Client(string clientId)
         {
-            if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException("clientId");
+            if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException(nameof(clientId));
 
             _provider = new AuthenticationProvider(clientId, new DesktopAuthenticationStore(clientId, Scope.System));
         }
@@ -47,9 +53,9 @@ namespace Sage.Office365.Graph
         /// <param name="tenantId">The Office 365 tenant id to perform application authentication.</param>
         public Client(string clientId, string clientSecret, string tenantId)
         {
-            if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException("clientId");
-            if (string.IsNullOrEmpty(clientSecret)) throw new ArgumentNullException("clientSecret");
-            if (string.IsNullOrEmpty(tenantId)) throw new ArgumentNullException("tenantId");
+            if (string.IsNullOrEmpty(clientId)) throw new ArgumentNullException(nameof(clientId));
+            if (string.IsNullOrEmpty(clientSecret)) throw new ArgumentNullException(nameof(clientSecret));
+            if (string.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
 
             _provider = new AuthenticationProvider(clientId, clientSecret, tenantId);
        }
@@ -66,7 +72,7 @@ namespace Sage.Office365.Graph
         {
             SignIn();
 
-            if (_principal == null) ThrowException(new ServiceException(new Error { Code = GraphErrorCode.InvalidRequest.ToString(), Message = "No user principal set for the client." }));
+            if (_principal == null) ThrowException(new ServiceException(new Error { Code = GraphErrorCode.InvalidRequest.ToString(), Message = NoPrincipal }));
 
             return new OneDrive(this, _principal);
         }

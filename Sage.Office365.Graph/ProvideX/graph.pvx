@@ -3,16 +3,16 @@
 0030 CLR'ADD("Sage.Office365.Graph.Authentication")
 0040 LET CLR'NAMESPACE$="System,Sage.Office365.Graph,Sage.Office365.Graph.Authentication,Sage.Office365.Graph.Authentication.Common"
 0050 ESCAPE
-0060 LET USERCLIENT=CLR'CREATE("Client", "b85030a0-4aaa-4777-a80c-5553f949f745")
+0060 LET USERCLIENT=CLR'CREATE("Client", "7a2d47f6-83d7-49da-b17d-6afd5a072e4e")
 0070 LET SCOPES=CLR'CREATE("GraphScopes")
 0080 USERCLIENT'Provider'Scopes'Add(SCOPES'UserReadWriteAll$)
 0090 USERCLIENT'Provider'Scopes'Add(SCOPES'FilesReadWriteAll$)
 0100 USERCLIENT'Provider'Scopes'Add(SCOPES'GroupReadWriteAll$)
 0110 USERCLIENT'Provider'Scopes'Add(SCOPES'DirectoryAccessAsUserAll$)
 0120 USERCLIENT'SignIn()
-0200 LET APPCLIENT=CLR'CREATE("Client", "b85030a0-4aaa-4777-a80c-5553f949f745", "gEREtebjT3HedPakTTP2Rrc", "b366b438-32ef-4f31-81f9-0c2214ec7d87")
+0200 LET APPCLIENT=CLR'CREATE("Client", "7a2d47f6-83d7-49da-b17d-6afd5a072e4e", "56FfAg8oDAKRxhO6UnQgwFt", "d869ff02-e7b3-436c-8e59-437c755b965c")
 0210 INPUT(0)"Get admin consent [y/n]?: ",X$
-0220 IF ((X$="Y") OR (X$="y")) APPCLIENT'Provider'GetAdminConsent("http://localhost/sagepaperless")
+0220 IF ((X$="Y") OR (X$="y")) APPCLIENT'Provider'GetAdminConsent("http://localhost/sage100USdev")
 0230 APPCLIENT'SignIn()
 0240 ESCAPE
 0300 PRINT "User: ", USERCLIENT'Principal
@@ -26,18 +26,14 @@
 0380 PRINT USERS'Item(I)'Id$, "=", USERS'Item(I)'DisplayName$
 0390 NEXT I
 0400 ESCAPE
-0410 LET ID$="ed515da4-5a63-40e4-aff8-3996f4fd987d"
+0410 LET ID$="russell@sage100USdev.onmicrosoft.com"
 0420 APPCLIENT'SETPRINCIPAL(ID$)
 0430 PRINT APPCLIENT'PRINCIPAL'DISPLAYNAME$
 0440 ESCAPE
 0500 DRIVE=APPCLIENT'OneDrive()
 0510 LET FOLDERS=DRIVE'GetChildren()
 0520 LET F=FOLDERS'Item(0)
-0530 LET CF=DRIVE'GetChildren(*F)
-0540 FOR I=0 TO CF'Count()-1
-0550 PRINT DRIVE'GetQualifiedPath$(*CF'Item(I))
-0560 NEXT I
-0570 ESCAPE
-0600 PDF=DRIVE'GetItem("3031414246/PvxLanguage.pdf")
+0530 ESCAPE
+0600 PDF=Drive'UploadFile(0, "c:\temp\ESTemplates.pdf");
 0610 DRIVE'DownloadFile(*PDF, "C:\TEMP", 1)
 0620 ESCAPE

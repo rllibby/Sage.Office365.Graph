@@ -24,6 +24,12 @@ namespace Sage.Office365.Graph.Authentication
     [SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
     public class AuthenticationProvider : IAuthenticationProvider2
     {
+        #region Private constants
+
+        private const int AuthHeight = 677;
+
+        #endregion
+
         #region Private fields
 
         private readonly IList<string> _scopes = new List<string>( );
@@ -123,8 +129,8 @@ namespace Sage.Office365.Graph.Authentication
                         _accessToken = responseValues[Params.AccessTokenKeyName];
                         _expiration = DateTimeOffset.UtcNow.Add(new TimeSpan(0, 0, int.Parse(responseValues[Params.ExpiresInKeyName])));
 
-                        if (!_appBased)
-                        {
+                        if (responseValues.ContainsKey(Params.RefreshTokenKeyName))
+                        { 
                             _refreshToken = responseValues[Params.RefreshTokenKeyName];
 
                             if (_store != null) _store.RefreshToken = _refreshToken;
@@ -163,6 +169,8 @@ namespace Sage.Office365.Graph.Authentication
         /// <returns>The oAuth code on success, null on failure.</returns>
         private string GetAuthorizationCodeAsync(string redirectUri)
         {
+            WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthHeight;
+
             var requestUri = new Uri(GetAuthorizationCodeRequestUrl(redirectUri));
             var result = WebAuthenticationBroker.WebAuthenticationBroker.Authenticate(WebAuthenticationOptions.None, requestUri, new Uri(redirectUri));
 
@@ -413,6 +421,8 @@ namespace Sage.Office365.Graph.Authentication
         {
             if (string.IsNullOrEmpty(_tenantId)) ThrowServiceError(GraphErrorCode.InvalidRequest, ServiceMessages.NoTenantId);
 
+            WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthHeight;
+
             var requestUri = new Uri(GetAdminConsentRequestUrl(redirectUri));
             var result = WebAuthenticationBroker.WebAuthenticationBroker.Authenticate(WebAuthenticationOptions.None, requestUri, new Uri(redirectUri));
 
@@ -447,6 +457,8 @@ namespace Sage.Office365.Graph.Authentication
 
                 if (Authenticated && !_appBased)
                 {
+                    WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthHeight;
+
                     var requestUri = new Uri(GetLogoutRequestUrl(Endpoints.LogoutRedirectUrl));
                     var result = WebAuthenticationBroker.WebAuthenticationBroker.Authenticate(WebAuthenticationOptions.None, requestUri, new Uri(Endpoints.LogoutRedirectUrl));
                 }

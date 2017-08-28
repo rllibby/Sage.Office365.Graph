@@ -17,6 +17,8 @@ namespace Sage.Office365.Graph.Authentication.Common
 
         #endregion
 
+        #region Graph scopes
+
         public const string CalendarsRead = "https://graph.microsoft.com/Calendars.Read";
         public const string CalendarsReadShared = "https://graph.microsoft.com/Calendars.Read.Shared";
         public const string CalendarsReadWrite = "https://graph.microsoft.com/Calendars.ReadWrite";
@@ -67,5 +69,7 @@ namespace Sage.Office365.Graph.Authentication.Common
         public const string UserReadBasicAll = "https://graph.microsoft.com/User.ReadBasic.All";
         public const string UserReadWrite = "https://graph.microsoft.com/User.ReadWrite";
         public const string UserReadWriteAll= "https://graph.microsoft.com/User.ReadWrite.All";
+
+        #endregion
     }
 }

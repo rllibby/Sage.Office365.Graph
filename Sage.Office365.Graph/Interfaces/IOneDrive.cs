@@ -57,6 +57,16 @@ namespace Sage.Office365.Graph.Interfaces
         DriveItem GetItem(string pathName);
 
         /// <summary>
+        /// Attempts to get the drive item using the specified file DriveItem.
+        /// </summary>
+        /// <param name="pathName">The file drive item to obtain.</param>
+        /// <returns>The drive item on success, throws on failure.</returns>
+        /// <example>
+        /// var pdf = Client.GetItem(fileItem);
+        /// </example>
+        DriveItem GetItem(DriveItem file);
+
+        /// <summary>
         /// Returns the parent folder for the specified drive item.
         /// </summary>
         /// <param name="folderOrFile">The item to return the parent for.</param>

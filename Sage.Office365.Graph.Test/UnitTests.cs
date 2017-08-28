@@ -19,10 +19,10 @@ namespace Sage.Office365.Graph.Test
     {
         #region Public constants
 
-        public const string ClientId = "b85030a0-4aaa-4777-a80c-5553f949f745";
-        public const string ClientSecret = "gEREtebjT3HedPakTTP2Rrc";
-        public const string TenantId = "b366b438-32ef-4f31-81f9-0c2214ec7d87";
-        public const string AdminRedirect = "http://localhost/sagepaperless";
+        public const string ClientId = "7a2d47f6-83d7-49da-b17d-6afd5a072e4e";
+        public const string ClientSecret = "56FfAg8oDAKRxhO6UnQgwFt";
+        public const string TenantId = "d869ff02-e7b3-436c-8e59-437c755b965c";
+        public const string AdminRedirect = "http://localhost/sage100USdev";
 
         #endregion
 
@@ -192,7 +192,7 @@ namespace Sage.Office365.Graph.Test
 
             var appClient = new Client(ClientId, ClientSecret, TenantId);
 
-            appClient.Provider.GetAdminConsent("http://localhost/sagepaperless");
+            appClient.Provider.GetAdminConsent("http://localhost/sage100USdev");
 
             appClient.SignIn();
 
@@ -203,9 +203,7 @@ namespace Sage.Office365.Graph.Test
 
             foreach (var user in users) Debug.WriteLine(user.DisplayName);
 
-            var principal = "ed515da4-5a63-40e4-aff8-3996f4fd987d";
-
-            appClient.SetPrincipal(principal);
+            appClient.SetPrincipal("russell@sage100USdev.onmicrosoft.com");
 
             Debug.WriteLine(string.Format("App Based Auth: {0}", appClient.Principal?.DisplayName));
 
@@ -215,26 +213,16 @@ namespace Sage.Office365.Graph.Test
             var folders = drive.GetChildren();
             var firstFolder = folders[0];
 
-            var subFolders = drive.GetChildren(firstFolder);
-
-            foreach (var subFolder in subFolders)
-            {
-                Debug.WriteLine(drive.GetQualifiedPath(subFolder));
-            }
-
-            var pdf = drive.GetItem("3031414246/PvxLanguage.pdf");
-
-            /* Downloads will fail when using the app based client */
-            drive.DownloadFile(pdf, "c:\\temp", true);
-
             var temp = drive.CreateFolder(firstFolder, Guid.NewGuid().ToString());
 
-            /* Uploads over 4MB will fail when using the app based client */
-            drive.UploadFile(null, @"c:\temp\ProductKeys2017.docx");
-            drive.UploadFile(temp, @"c:\temp\ProductKeys2017.docx");
-            drive.UploadFile(null, @"c:\temp\PVXLanguage.pdf");
-            drive.UploadFile(temp, @"c:\temp\PVXLanguage.pdf");
-            
+            var file1 = drive.UploadFile(null, @"c:\temp\ESTemplates.pdf");
+            var file2 = drive.UploadFile(temp, @"c:\temp\ITTemplates.pdf");
+
+            var subFolders = drive.GetChildren(firstFolder);
+
+            var pdf = drive.GetItem(file1);
+
+            drive.DownloadFile(pdf, "c:\\temp", true);
             drive.DeleteItem(temp);
         }
     }
