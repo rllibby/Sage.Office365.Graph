@@ -59,8 +59,8 @@ namespace Sage.Office365.Graph
         /// <param name="user">The graph user.</param>
         internal OneDrive(IClient client, User user)
         {
-            if (client == null) throw new ArgumentNullException("client");
-            if (user == null) throw new ArgumentNullException("user");
+            if (client == null) throw new ArgumentNullException(nameof(client));
+            if (user == null) throw new ArgumentNullException(nameof(user));
 
             _client = client;
             _user = user;
@@ -156,12 +156,24 @@ namespace Sage.Office365.Graph
 
             if (System.IO.File.Exists(localFile) && !overWriteIfExists) throw new IOException(string.Format("The file '{0}' already exists and overWriteIfExists was set to false.", localFile));
 
-            using (var stream = new FileStream(localFile, FileMode.Create))
+            var removeFile = true;
+
+            try
             {
-                using (var content = ExecuteTask(UserDrive.Items[file.Id].Content.Request().GetAsync()))
+                using (var stream = new FileStream(localFile, FileMode.Create))
                 {
-                    content.CopyTo(stream);
+                    using (var content = ExecuteTask(UserDrive.Items[file.Id].Content.Request().GetAsync()))
+                    {
+                        content.CopyTo(stream);
+                        removeFile = false;
+                    }
                 }
+            }
+            catch
+            {
+                if (removeFile && System.IO.File.Exists(localFile)) System.IO.File.Delete(localFile);
+
+                throw;
             }
         }
 
@@ -184,6 +196,21 @@ namespace Sage.Office365.Graph
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Attempts to get the drive item using the specified file DriveItem.
+        /// </summary>
+        /// <param name="pathName">The file drive item to obtain.</param>
+        /// <returns>The drive item on success, throws on failure.</returns>
+        /// <example>
+        /// var pdf = Client.GetItem(fileItem);
+        /// </example>
+        public DriveItem GetItem(DriveItem file)
+        {
+            if (file == null) throw new ArgumentNullException(nameof(file));
+
+            return GetItem(GetQualifiedPath(file));
         }
 
         /// <summary>

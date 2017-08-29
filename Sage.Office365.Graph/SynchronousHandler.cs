@@ -15,6 +15,12 @@ namespace Sage.Office365.Graph
     /// </summary>
     public class SynchronousHandler
     {
+        #region Private constants
+
+        private const string CancelledException = "The task was cancelled.";
+
+        #endregion
+
         #region Public methods
 
         /// <summary>
@@ -41,12 +47,12 @@ namespace Sage.Office365.Graph
         /// <param name="task">The task to execute.</param>
         public virtual void ExecuteTask(Task task)
         {
-            if (task == null) throw new ArgumentNullException("task");
+            if (task == null) throw new ArgumentNullException(nameof(task));
 
             task.WaitWithPumping();
 
             if (task.IsFaulted) ThrowException(task.Exception);
-            if (task.IsCanceled) throw new OperationCanceledException("The task was cancelled.");
+            if (task.IsCanceled) throw new OperationCanceledException(CancelledException);
         }
 
         /// <summary>
@@ -57,12 +63,12 @@ namespace Sage.Office365.Graph
         /// <returns>The result type from the task on success, throws on failure.</returns>
         public virtual T ExecuteTask<T>(Task<T> task)
         {
-            if (task == null) throw new ArgumentNullException("task");
+            if (task == null) throw new ArgumentNullException(nameof(task));
 
             task.WaitWithPumping();
 
             if (task.IsFaulted) ThrowException(task.Exception);
-            if (task.IsCanceled) throw new OperationCanceledException("The task was cancelled.");
+            if (task.IsCanceled) throw new OperationCanceledException(CancelledException);
 
             return task.Result;
         }

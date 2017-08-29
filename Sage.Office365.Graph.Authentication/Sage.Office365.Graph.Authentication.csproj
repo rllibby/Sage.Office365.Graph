@@ -56,8 +56,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="WebAuthenticationBroker">
-      <HintPath>..\Assemblies\WebAuthenticationBroker.dll</HintPath>
+    <Reference Include="WebAuthenticationBroker, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\WebAuthenticationBroker.1.0.0\lib\net462\WebAuthenticationBroker.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
