@@ -34,6 +34,6 @@
 0510 LET FOLDERS=DRIVE'GetChildren()
 0520 LET F=FOLDERS'Item(0)
 0530 ESCAPE
-0600 PDF=Drive'UploadFile(0, "c:\temp\ESTemplates.pdf");
+0600 PDF=Drive'UploadFile(*0, "c:\temp\ESTemplates.pdf");
 0610 DRIVE'DownloadFile(*PDF, "C:\TEMP", 1)
 0620 ESCAPE

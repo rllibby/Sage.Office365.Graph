@@ -26,7 +26,7 @@ namespace Sage.Office365.Graph.Authentication
     {
         #region Private constants
 
-        private const int AuthHeight = 677;
+        private const int AuthWindowHeight = 677;
 
         #endregion
 
@@ -169,7 +169,7 @@ namespace Sage.Office365.Graph.Authentication
         /// <returns>The oAuth code on success, null on failure.</returns>
         private string GetAuthorizationCodeAsync(string redirectUri)
         {
-            WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthHeight;
+            WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthWindowHeight;
 
             var requestUri = new Uri(GetAuthorizationCodeRequestUrl(redirectUri));
             var result = WebAuthenticationBroker.WebAuthenticationBroker.Authenticate(WebAuthenticationOptions.None, requestUri, new Uri(redirectUri));
@@ -421,7 +421,7 @@ namespace Sage.Office365.Graph.Authentication
         {
             if (string.IsNullOrEmpty(_tenantId)) ThrowServiceError(GraphErrorCode.InvalidRequest, ServiceMessages.NoTenantId);
 
-            WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthHeight;
+            WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthWindowHeight;
 
             var requestUri = new Uri(GetAdminConsentRequestUrl(redirectUri));
             var result = WebAuthenticationBroker.WebAuthenticationBroker.Authenticate(WebAuthenticationOptions.None, requestUri, new Uri(redirectUri));
@@ -457,7 +457,7 @@ namespace Sage.Office365.Graph.Authentication
 
                 if (Authenticated && !_appBased)
                 {
-                    WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthHeight;
+                    WebAuthenticationBroker.WebAuthenticationBroker.Height = AuthWindowHeight;
 
                     var requestUri = new Uri(GetLogoutRequestUrl(Endpoints.LogoutRedirectUrl));
                     var result = WebAuthenticationBroker.WebAuthenticationBroker.Authenticate(WebAuthenticationOptions.None, requestUri, new Uri(Endpoints.LogoutRedirectUrl));

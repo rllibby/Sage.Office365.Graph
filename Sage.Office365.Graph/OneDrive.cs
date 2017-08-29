@@ -5,8 +5,6 @@
 
 using Microsoft.Graph;
 using Sage.Office365.Graph.Interfaces;
-
-/* Example C# */
 using System;
 using System.Collections.Generic;
 using System.IO;
