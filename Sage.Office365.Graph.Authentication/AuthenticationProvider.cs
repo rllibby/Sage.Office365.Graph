@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 namespace Sage.Office365.Graph.Authentication
 {
     /// <summary>
-    /// Authentication provider for Azure AD /Graph.
+    /// Authentication provider for Azure AD and Graph API.
     /// </summary>
     [SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
     public class AuthenticationProvider : IAuthenticationProvider2
@@ -97,12 +97,7 @@ namespace Sage.Office365.Graph.Authentication
         /// <returns>The task to await.</returns>
         private Task RefreshAccessTokenAsync()
         {
-            if (!string.IsNullOrEmpty(_refreshToken))
-            {
-                return SendTokenRequestAsync(GetRefreshTokenRequestBody(_refreshToken));
-            }
-
-            return Task.FromResult(0);
+            return (!string.IsNullOrEmpty(_refreshToken)) ? SendTokenRequestAsync(GetRefreshTokenRequestBody(_refreshToken)) : Task.FromResult(0);
         }
 
         /// <summary>
@@ -122,24 +117,21 @@ namespace Sage.Office365.Graph.Authentication
                 {
                     var responseValues = _httpProvider.Serializer.DeserializeObject<IDictionary<string, string>>(responseStream);
 
-                    if (responseValues != null)
-                    {
-                        ThrowIfError(responseValues);
+                    if (responseValues == null) ThrowServiceError(GraphErrorCode.AuthenticationFailure, ServiceMessages.NoTokenReturned);
 
-                        _accessToken = responseValues[Params.AccessTokenKeyName];
-                        _expiration = DateTimeOffset.UtcNow.Add(new TimeSpan(0, 0, int.Parse(responseValues[Params.ExpiresInKeyName])));
+                    ThrowIfError(responseValues);
 
-                        if (responseValues.ContainsKey(Params.RefreshTokenKeyName))
-                        { 
-                            _refreshToken = responseValues[Params.RefreshTokenKeyName];
+                    _accessToken = responseValues[Params.AccessTokenKeyName];
+                    _expiration = DateTimeOffset.UtcNow.Add(new TimeSpan(0, 0, int.Parse(responseValues[Params.ExpiresInKeyName])));
 
-                            if (_store != null) _store.RefreshToken = _refreshToken;
-                        }
+                    if (responseValues.ContainsKey(Params.RefreshTokenKeyName))
+                    { 
+                        _refreshToken = responseValues[Params.RefreshTokenKeyName];
 
-                        return;
+                        if (_store != null) _store.RefreshToken = _refreshToken;
                     }
 
-                    ThrowServiceError(GraphErrorCode.AuthenticationFailure, ServiceMessages.NoTokenReturned);
+                    return;
                 }
             }
         }
@@ -200,10 +192,10 @@ namespace Sage.Office365.Graph.Authentication
         {
             var requestBodyStringBuilder = new StringBuilder();
 
-            requestBodyStringBuilder.AppendFormat("{0}={1}", Params.ClientIdKeyName, _clientId);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.ClientSecretKeyName, _clientSecret);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.GrantTypeKeyName, Params.ClientCredentions);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.ScopeKeyName, WebUtility.UrlEncode(string.Join(" ", _scopes)));
+            requestBodyStringBuilder.AppendBody(Params.ClientIdKeyName, _clientId);
+            requestBodyStringBuilder.AppendBody(Params.ClientSecretKeyName, _clientSecret);
+            requestBodyStringBuilder.AppendBody(Params.GrantTypeKeyName, Params.ClientCredentions);
+            requestBodyStringBuilder.AppendBody(Params.ScopeKeyName, WebUtility.UrlEncode(string.Join(" ", _scopes)));
 
             return requestBodyStringBuilder.ToString();
         }
@@ -218,9 +210,9 @@ namespace Sage.Office365.Graph.Authentication
             var requestUriStringBuilder = new StringBuilder();
 
             requestUriStringBuilder.Append(string.Format(Endpoints.AdminConsentServiceUrl, _tenantId));
-            requestUriStringBuilder.AppendFormat("?{0}={1}", Params.ClientIdKeyName, _clientId);
-            requestUriStringBuilder.AppendFormat("&{0}={1}", Params.StateKeyName, Params.ConsentTypeValueName);
-            requestUriStringBuilder.AppendFormat("&{0}={1}", Params.RedirectUriKeyName, WebUtility.UrlEncode(redirectUri));
+            requestUriStringBuilder.AppendQuery(Params.ClientIdKeyName, _clientId, true);
+            requestUriStringBuilder.AppendQuery(Params.StateKeyName, Params.ConsentTypeValueName);
+            requestUriStringBuilder.AppendQuery(Params.RedirectUriKeyName, WebUtility.UrlEncode(redirectUri));
 
             return requestUriStringBuilder.ToString();
         }
@@ -235,8 +227,8 @@ namespace Sage.Office365.Graph.Authentication
             var requestUriStringBuilder = new StringBuilder();
 
             requestUriStringBuilder.Append(Endpoints.LogoutServiceUrl);
-            requestUriStringBuilder.AppendFormat("?{0}={1}", Params.ClientIdKeyName, _clientId);
-            requestUriStringBuilder.AppendFormat("&{0}={1}", Params.PostRedirectUriKeyName, redirectUri);
+            requestUriStringBuilder.AppendQuery(Params.ClientIdKeyName, _clientId, true);
+            requestUriStringBuilder.AppendQuery(Params.PostRedirectUriKeyName, redirectUri);
 
             return requestUriStringBuilder.ToString();
         }
@@ -251,10 +243,10 @@ namespace Sage.Office365.Graph.Authentication
             var requestUriStringBuilder = new StringBuilder();
 
             requestUriStringBuilder.Append(Endpoints.AuthenticationServiceUrl);
-            requestUriStringBuilder.AppendFormat("?{0}={1}", Params.RedirectUriKeyName, WebUtility.UrlEncode(redirectUri));
-            requestUriStringBuilder.AppendFormat("&{0}={1}", Params.ClientIdKeyName, _clientId);
-            requestUriStringBuilder.AppendFormat("&{0}={1}", Params.ResponseTypeKeyName, Params.CodeKeyName);
-            requestUriStringBuilder.AppendFormat("&{0}={1}", Params.ScopeKeyName, WebUtility.UrlEncode(string.Join(" ", _scopes)));
+            requestUriStringBuilder.AppendQuery(Params.RedirectUriKeyName, WebUtility.UrlEncode(redirectUri), true);
+            requestUriStringBuilder.AppendQuery(Params.ClientIdKeyName, _clientId);
+            requestUriStringBuilder.AppendQuery(Params.ResponseTypeKeyName, Params.CodeKeyName);
+            requestUriStringBuilder.AppendQuery(Params.ScopeKeyName, WebUtility.UrlEncode(string.Join(" ", _scopes)));
 
             return requestUriStringBuilder.ToString();
         }
@@ -269,11 +261,11 @@ namespace Sage.Office365.Graph.Authentication
         {
             var requestBodyStringBuilder = new StringBuilder();
 
-            requestBodyStringBuilder.AppendFormat("{0}={1}", Params.RedirectUriKeyName, _redirectUri);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.ClientIdKeyName, _clientId);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.CodeKeyName, code);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.GrantTypeKeyName, Params.AuthorizationCodeGrantType);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.ScopeKeyName, WebUtility.UrlEncode(string.Join(" ", _scopes)));
+            requestBodyStringBuilder.AppendBody(Params.RedirectUriKeyName, _redirectUri);
+            requestBodyStringBuilder.AppendBody(Params.ClientIdKeyName, _clientId);
+            requestBodyStringBuilder.AppendBody(Params.CodeKeyName, code);
+            requestBodyStringBuilder.AppendBody(Params.GrantTypeKeyName, Params.AuthorizationCodeGrantType);
+            requestBodyStringBuilder.AppendBody(Params.ScopeKeyName, WebUtility.UrlEncode(string.Join(" ", _scopes)));
 
             return requestBodyStringBuilder.ToString();
         }
@@ -287,11 +279,11 @@ namespace Sage.Office365.Graph.Authentication
         {
             var requestBodyStringBuilder = new StringBuilder();
 
-            requestBodyStringBuilder.AppendFormat("{0}={1}", Params.RedirectUriKeyName, _redirectUri);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.ClientIdKeyName, _clientId);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.RefreshTokenKeyName, refreshToken);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.GrantTypeKeyName, Params.RefreshTokenKeyName);
-            requestBodyStringBuilder.AppendFormat("&{0}={1}", Params.ScopeKeyName, WebUtility.UrlEncode(string.Join(" ", _scopes)));
+            requestBodyStringBuilder.AppendBody(Params.RedirectUriKeyName, _redirectUri);
+            requestBodyStringBuilder.AppendBody(Params.ClientIdKeyName, _clientId);
+            requestBodyStringBuilder.AppendBody(Params.RefreshTokenKeyName, refreshToken);
+            requestBodyStringBuilder.AppendBody(Params.GrantTypeKeyName, Params.RefreshTokenKeyName);
+            requestBodyStringBuilder.AppendBody(Params.ScopeKeyName, WebUtility.UrlEncode(string.Join(" ", _scopes)));
 
             return requestBodyStringBuilder.ToString();
         }
@@ -316,7 +308,6 @@ namespace Sage.Office365.Graph.Authentication
             _store = tokenStore;
             _clientId = clientId;
             _scopes.Add(GraphScopes.UserRead);
-            _appBased = false;
         }
 
         /// <summary>
@@ -351,7 +342,6 @@ namespace Sage.Office365.Graph.Authentication
         public async Task AuthenticateAsync()
         {
             if (Authenticated) return;
-
             if (!_appBased && !string.IsNullOrEmpty(_refreshToken))
             { 
                 try

@@ -243,9 +243,7 @@ namespace Sage.Office365.Graph
 
             var temp = FormatDrivePath(folderOrFile.ParentReference.Path);
 
-            if (string.IsNullOrEmpty(temp)) return ExecuteTask(UserDrive.Root.Request().GetAsync());
-
-            return GetItem(temp);
+            return (string.IsNullOrEmpty(temp)) ? ExecuteTask(UserDrive.Root.Request().GetAsync()) : GetItem(temp);
         }
 
         /// <summary>
@@ -319,6 +317,18 @@ namespace Sage.Office365.Graph
 
                 return GetItem(remoteFile);
             }
+        }
+
+        #endregion
+
+        #region Public properties
+
+        /// <summary>
+        /// Returns the root of the drive.
+        /// </summary>
+        public DriveItem Root
+        {
+            get { return ExecuteTask(UserDrive.Root.Request().GetAsync()); }
         }
 
         #endregion
