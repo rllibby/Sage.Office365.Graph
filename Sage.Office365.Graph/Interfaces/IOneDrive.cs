@@ -89,6 +89,11 @@ namespace Sage.Office365.Graph.Interfaces
         /// <returns>The drive item for the newly uploaded file.</returns>
         DriveItem UploadFile(DriveItem folder, string localFile);
 
+        /// <summary>
+        /// Returns the root of the drive.
+        /// </summary>
+        DriveItem Root { get; }
+
         #endregion
     }
 }

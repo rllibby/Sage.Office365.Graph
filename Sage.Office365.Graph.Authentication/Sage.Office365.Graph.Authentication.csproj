@@ -69,6 +69,7 @@
     <Compile Include="Common\Params.cs" />
     <Compile Include="Common\GraphScopes.cs" />
     <Compile Include="Common\ServiceMessages.cs" />
+    <Compile Include="Common\StringBuilderExtension.cs" />
     <Compile Include="Interfaces\IAuthenticationProvider2.cs" />
     <Compile Include="Interfaces\IAuthenticationStore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

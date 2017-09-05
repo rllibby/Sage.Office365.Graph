@@ -179,6 +179,24 @@ namespace Sage.Office365.Graph.Test
 
         [TestMethod]
         [TestCategory("Client")]
+        public void Test_ClientRoot()
+        {
+            var userClient = new Client(ClientId);
+
+            userClient.Provider.Scopes.Add(GraphScopes.UserReadWriteAll);
+            userClient.Provider.Scopes.Add(GraphScopes.FilesReadWriteAll);
+            userClient.Provider.Scopes.Add(GraphScopes.GroupReadWriteAll);
+            userClient.Provider.Scopes.Add(GraphScopes.DirectoryAccessAsUserAll);
+
+            userClient.SignIn();
+
+            var drive = userClient.OneDrive();
+            var root = drive.Root;
+
+        }
+
+        [TestMethod]
+        [TestCategory("Client")]
         public void Test_ClientExample()
         {
             var userClient = new Client(ClientId);
