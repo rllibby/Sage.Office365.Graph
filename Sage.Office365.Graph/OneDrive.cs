@@ -59,11 +59,8 @@ namespace Sage.Office365.Graph
         /// <param name="user">The graph user.</param>
         internal OneDrive(IClient client, User user)
         {
-            if (client == null) throw new ArgumentNullException(nameof(client));
-            if (user == null) throw new ArgumentNullException(nameof(user));
-
-            _client = client;
-            _user = user;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+            _user = user ?? throw new ArgumentNullException(nameof(user));
         }
 
         #endregion
